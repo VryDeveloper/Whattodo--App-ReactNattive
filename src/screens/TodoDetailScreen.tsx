@@ -19,6 +19,8 @@ export function TodoDetailScreen({ route, navigation }: Props) {
   }
 
   function confirmDelete() {
+    if (!todo) return;
+    const todoId = todo.id;
     Alert.alert(
       "Excluir tarefa",
       "Tem certeza de que deseja excluir esta tarefa? Essa ação não pode ser desfeita.",
@@ -28,7 +30,7 @@ export function TodoDetailScreen({ route, navigation }: Props) {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
-            await removeTodo(todo.id);
+            await removeTodo(todoId);
             navigation.goBack();
           },
         },

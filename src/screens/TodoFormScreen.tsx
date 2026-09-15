@@ -48,7 +48,7 @@ export function TodoFormScreen({ route, navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.label}>Título</Text>
       <TextInput
-        style={[styles.input, error && styles.inputError]}
+        style={[styles.input, error ? styles.inputError : null]}
         value={title}
         onChangeText={(text) => {
           setTitle(text);
