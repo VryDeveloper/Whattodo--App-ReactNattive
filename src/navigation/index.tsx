@@ -7,6 +7,7 @@ import { SettingsScreen } from "../screens/SettingsScreen";
 import { TodoDetailScreen } from "../screens/TodoDetailScreen";
 import { TodoFormScreen } from "../screens/TodoFormScreen";
 import { TodoListScreen } from "../screens/TodoListScreen";
+import { navigationRef } from "./navigationRef";
 import { RootStackParamList, RootTabParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -38,7 +39,7 @@ function TarefasStackNavigator() {
 
 export function RootNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
         screenOptions={{
           tabBarActiveTintColor: "#F5C400",

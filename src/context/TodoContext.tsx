@@ -13,7 +13,11 @@ import {
   fetchTodos,
   updateTodoRemote,
 } from "../services/api";
-import { cancelTodoReminder, scheduleTodoReminder } from "../services/notifications";
+import {
+  cancelTodoReminder,
+  scheduleSnoozeReminder,
+  scheduleTodoReminder,
+} from "../services/notifications";
 import { loadTodosFromStorage, saveTodosToStorage } from "../services/storage";
 import { LoadStatus, NewTodo, Todo } from "../types/todo";
 import { useSettings } from "./SettingsContext";
@@ -27,6 +31,8 @@ interface TodoContextValue {
   editTodo: (id: number, data: NewTodo) => Promise<void>;
   removeTodo: (id: number) => Promise<void>;
   toggleCompleted: (id: number) => Promise<void>;
+  completeTodo: (id: number) => Promise<void>;
+  snoozeTodo: (id: number, minutes: number) => Promise<void>;
   clearCompleted: () => Promise<void>;
   getTodoById: (id: number) => Todo | undefined;
 }
@@ -203,6 +209,37 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     [todos, persist, syncReminder]
   );
 
+  // Usado pela ação "Concluir tarefa" da notificação: marca como concluída
+  // de forma idempotente (não reabre a tarefa se já estava concluída).
+  const completeTodo = useCallback(
+    async (id: number) => {
+      const target = todos.find((t) => t.id === id);
+      if (!target || target.completed) return;
+      const updated: Todo = { ...target, completed: true };
+      const withReminder = await syncReminder(updated);
+      try {
+        await updateTodoRemote(withReminder);
+      } catch {
+        // segue com a atualização local mesmo se a API simulada falhar.
+      }
+      await persist(todos.map((t) => (t.id === id ? withReminder : t)));
+    },
+    [todos, persist, syncReminder]
+  );
+
+  // Usado pela ação "Adiar 30 min" da notificação: agenda um novo lembrete
+  // a partir de agora, sem alterar a data/hora original da tarefa.
+  const snoozeTodo = useCallback(
+    async (id: number, minutes: number) => {
+      const target = todos.find((t) => t.id === id);
+      if (!target) return;
+      await cancelTodoReminder(target.notificationId);
+      const notificationId = await scheduleSnoozeReminder(target, minutes);
+      await persist(todos.map((t) => (t.id === id ? { ...t, notificationId } : t)));
+    },
+    [todos, persist]
+  );
+
   const clearCompleted = useCallback(async () => {
     const completed = todos.filter((t) => t.completed);
     await Promise.all(completed.map((t) => cancelTodoReminder(t.notificationId)));
@@ -224,6 +261,8 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
       editTodo,
       removeTodo,
       toggleCompleted,
+      completeTodo,
+      snoozeTodo,
       clearCompleted,
       getTodoById,
     }),
@@ -236,6 +275,8 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
       editTodo,
       removeTodo,
       toggleCompleted,
+      completeTodo,
+      snoozeTodo,
       clearCompleted,
       getTodoById,
     ]

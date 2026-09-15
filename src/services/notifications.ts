@@ -97,3 +97,23 @@ export async function cancelTodoReminder(notificationId: string | null): Promise
   if (!notificationId) return;
   await Notifications.cancelScheduledNotificationAsync(notificationId);
 }
+
+/**
+ * Agenda um novo lembrete "adiado" a partir de agora (usado pela ação
+ * "Adiar 30 min" da notificação). Diferente de scheduleTodoReminder, não
+ * depende de dueDate/notifyEnabled — o usuário pediu explicitamente para
+ * ser lembrado de novo, então respeitamos isso mesmo que a tarefa em si
+ * não tenha lembrete configurado.
+ */
+export async function scheduleSnoozeReminder(todo: Todo, minutes: number): Promise<string> {
+  const triggerDate = new Date(Date.now() + minutes * 60_000);
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: todo.title,
+      body: todo.description || "Lembrete adiado — está na hora desta tarefa.",
+      categoryIdentifier: REMINDER_CATEGORY_ID,
+      data: { todoId: todo.id },
+    },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
+  });
+}
