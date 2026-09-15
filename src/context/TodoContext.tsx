@@ -24,6 +24,7 @@ interface TodoContextValue {
   editTodo: (id: number, data: NewTodo) => Promise<void>;
   removeTodo: (id: number) => Promise<void>;
   toggleCompleted: (id: number) => Promise<void>;
+  clearCompleted: () => Promise<void>;
   getTodoById: (id: number) => Todo | undefined;
 }
 
@@ -157,6 +158,10 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     [todos, persist]
   );
 
+  const clearCompleted = useCallback(async () => {
+    await persist(todos.filter((t) => !t.completed));
+  }, [todos, persist]);
+
   const getTodoById = useCallback(
     (id: number) => todos.find((t) => t.id === id),
     [todos]
@@ -172,9 +177,21 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
       editTodo,
       removeTodo,
       toggleCompleted,
+      clearCompleted,
       getTodoById,
     }),
-    [todos, status, errorMessage, refresh, addTodo, editTodo, removeTodo, toggleCompleted, getTodoById]
+    [
+      todos,
+      status,
+      errorMessage,
+      refresh,
+      addTodo,
+      editTodo,
+      removeTodo,
+      toggleCompleted,
+      clearCompleted,
+      getTodoById,
+    ]
   );
 
   return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>;

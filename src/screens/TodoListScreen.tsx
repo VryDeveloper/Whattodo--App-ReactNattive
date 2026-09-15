@@ -6,6 +6,7 @@ import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { SearchBar } from "../components/SearchBar";
 import { TodoItem } from "../components/TodoItem";
+import { useSettings } from "../context/SettingsContext";
 import { useTodos } from "../context/TodoContext";
 import { RootStackParamList } from "../navigation/types";
 import { Todo } from "../types/todo";
@@ -14,13 +15,16 @@ type Props = NativeStackScreenProps<RootStackParamList, "TodoList">;
 
 export function TodoListScreen({ navigation }: Props) {
   const { todos, status, errorMessage, refresh } = useTodos();
+  const { settings } = useSettings();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return todos;
-    return todos.filter((t) => t.title.toLowerCase().includes(q));
-  }, [todos, query]);
+    const base = q ? todos.filter((t) => t.title.toLowerCase().includes(q)) : todos;
+    if (!settings.sortPendingFirst) return base;
+    // Ordenação local (só reordena o que já está em memória, sem nova busca).
+    return [...base].sort((a, b) => Number(a.completed) - Number(b.completed));
+  }, [todos, query, settings.sortPendingFirst]);
 
   function handleOpenDetail(todo: Todo) {
     navigation.navigate("TodoDetail", { id: todo.id });
