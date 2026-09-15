@@ -6,7 +6,7 @@ import { RootNavigator } from "./src/navigation";
 export default function App() {
   return (
     <TodoProvider>
-      <StatusBar style="light" backgroundColor="#111111" />
+      <StatusBar style="light" />
       <RootNavigator />
     </TodoProvider>
   );
