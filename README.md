@@ -4,7 +4,7 @@ App de CRUD de tarefas (To-Do) desenvolvido para o teste técnico da vaga
 **Desenvolvedor(a) Mobile Júnior I** da Horizon Inovação e Tecnologia.
 
 
-<img width="400" height="600" alt="localhost_8081_" src="https://github.com/user-attachments/assets/c56b6a76-4687-4e14-9082-2f5652ea1282" />
+<img width="400" height="800" alt="localhost_8081_" src="https://github.com/user-attachments/assets/c56b6a76-4687-4e14-9082-2f5652ea1282" />
 
 
 Consome a API pública [JSONPlaceholder](https://jsonplaceholder.typicode.com/todos).
