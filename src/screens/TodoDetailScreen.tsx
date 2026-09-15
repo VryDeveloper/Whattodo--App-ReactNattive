@@ -38,6 +38,8 @@ export function TodoDetailScreen({ route, navigation }: Props) {
     );
   }
 
+  const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{todo.title}</Text>
@@ -45,8 +47,26 @@ export function TodoDetailScreen({ route, navigation }: Props) {
         <Text style={styles.statusText}>{todo.completed ? "Concluída" : "Pendente"}</Text>
       </View>
 
+      {todo.description ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Descrição</Text>
+          <Text style={styles.description}>{todo.description}</Text>
+        </View>
+      ) : null}
+
+      {dueDate && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Data e hora</Text>
+          <Text style={styles.description}>
+            {dueDate.toLocaleDateString("pt-BR")} às{" "}
+            {dueDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            {todo.notifyEnabled ? " · lembrete ativado 🔔" : ""}
+          </Text>
+        </View>
+      )}
+
       <TouchableOpacity
-        style={styles.editButton}
+        style={[styles.editButton, styles.actionsSpacing]}
         onPress={() => navigation.navigate("TodoForm", { id: todo.id })}
       >
         <Text style={styles.editButtonText}>Editar</Text>
@@ -63,10 +83,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
   notFound: { color: "#666", fontSize: 15, marginTop: 40, textAlign: "center" },
   title: { fontSize: 20, fontWeight: "700", color: "#111", marginBottom: 12 },
-  statusPill: { alignSelf: "flex-start", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, marginBottom: 32 },
+  statusPill: { alignSelf: "flex-start", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, marginBottom: 12 },
   pillDone: { backgroundColor: "#E6F4EA" },
   pillPending: { backgroundColor: "#FFF6DA" },
   statusText: { fontSize: 13, fontWeight: "600", color: "#333" },
+  section: { marginTop: 16 },
+  sectionLabel: { fontSize: 12, fontWeight: "700", color: "#888", textTransform: "uppercase" },
+  description: { fontSize: 15, color: "#333", marginTop: 4, lineHeight: 20 },
+  actionsSpacing: { marginTop: 32 },
   editButton: {
     backgroundColor: "#F5C400",
     borderRadius: 10,

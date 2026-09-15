@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
@@ -14,7 +14,7 @@ import { Todo } from "../types/todo";
 type Props = NativeStackScreenProps<RootStackParamList, "TodoList">;
 
 export function TodoListScreen({ navigation }: Props) {
-  const { todos, status, errorMessage, refresh } = useTodos();
+  const { todos, status, errorMessage, refresh, toggleCompleted, removeTodo } = useTodos();
   const { settings } = useSettings();
   const [query, setQuery] = useState("");
 
@@ -28,6 +28,17 @@ export function TodoListScreen({ navigation }: Props) {
 
   function handleOpenDetail(todo: Todo) {
     navigation.navigate("TodoDetail", { id: todo.id });
+  }
+
+  function handleDelete(todo: Todo) {
+    Alert.alert(
+      "Excluir tarefa",
+      `Tem certeza de que deseja excluir "${todo.title}"? Essa ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Excluir", style: "destructive", onPress: () => removeTodo(todo.id) },
+      ]
+    );
   }
 
   function renderContent() {
@@ -48,7 +59,14 @@ export function TodoListScreen({ navigation }: Props) {
       <FlatList
         data={filtered}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <TodoItem todo={item} onPress={handleOpenDetail} />}
+        renderItem={({ item }) => (
+          <TodoItem
+            todo={item}
+            onPress={handleOpenDetail}
+            onToggleComplete={(todo) => toggleCompleted(todo.id)}
+            onDelete={handleDelete}
+          />
+        )}
         onRefresh={refresh}
         refreshing={status === "loading"}
       />
