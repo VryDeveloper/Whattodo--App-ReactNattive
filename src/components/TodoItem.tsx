@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useRef } from "react";
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Todo } from "../types/todo";
 
 interface Props {
@@ -17,16 +17,61 @@ function formatDueDate(iso: string): string {
 }
 
 export function TodoItem({ todo, onPress, onToggleComplete, onDelete }: Props) {
+  const flashAnim = useRef(new Animated.Value(0)).current;
+
+  function handleToggle() {
+    if (todo.completed) {
+      // Reabrir a tarefa não precisa do "pisca-pisca", é uma ação instantânea.
+      onToggleComplete(todo);
+      return;
+    }
+
+    // Pisca em verde no checkbox antes de mover a tarefa para concluídas,
+    // dando um feedback visual claro de que a ação foi registrada.
+    Animated.sequence([
+      Animated.timing(flashAnim, { toValue: 1, duration: 140, useNativeDriver: false }),
+      Animated.timing(flashAnim, { toValue: 0, duration: 320, useNativeDriver: false }),
+    ]).start(() => onToggleComplete(todo));
+  }
+
+  const flashBackgroundColor = flashAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#FFFFFF", "#4CD964"],
+  });
+  const flashBorderColor = flashAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#CCC", "#2E7D32"],
+  });
+  const flashScale = flashAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.25, 1.1],
+  });
+  const flashCheckOpacity = flashAnim;
+
   return (
     <View style={styles.row}>
       <TouchableOpacity
         style={styles.checkbox}
-        onPress={() => onToggleComplete(todo)}
+        onPress={handleToggle}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <View style={[styles.checkboxCircle, todo.completed && styles.checkboxCircleDone]}>
-          {todo.completed && <Text style={styles.checkmark}>✓</Text>}
-        </View>
+        <Animated.View
+          style={[
+            styles.checkboxCircle,
+            todo.completed && styles.checkboxCircleDone,
+            !todo.completed && {
+              backgroundColor: flashBackgroundColor,
+              borderColor: flashBorderColor,
+              transform: [{ scale: flashScale }],
+            },
+          ]}
+        >
+          {todo.completed ? (
+            <Text style={styles.checkmark}>✓</Text>
+          ) : (
+            <Animated.Text style={[styles.checkmark, { opacity: flashCheckOpacity }]}>✓</Animated.Text>
+          )}
+        </Animated.View>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.content} onPress={() => onPress(todo)} activeOpacity={0.7}>

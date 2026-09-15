@@ -1,6 +1,16 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useMemo, useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  LayoutAnimation,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  UIManager,
+  View,
+} from "react-native";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
@@ -13,10 +23,23 @@ import { Todo } from "../types/todo";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TodoList">;
 
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export function TodoListScreen({ navigation }: Props) {
   const { todos, status, errorMessage, refresh, toggleCompleted, removeTodo } = useTodos();
   const { settings } = useSettings();
   const [query, setQuery] = useState("");
+
+  function handleToggleComplete(todo: Todo) {
+    // Anima a transição do item até a área de concluídas ao reordenar a lista.
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    toggleCompleted(todo.id);
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -63,7 +86,7 @@ export function TodoListScreen({ navigation }: Props) {
           <TodoItem
             todo={item}
             onPress={handleOpenDetail}
-            onToggleComplete={(todo) => toggleCompleted(todo.id)}
+            onToggleComplete={handleToggleComplete}
             onDelete={handleDelete}
           />
         )}

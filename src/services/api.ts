@@ -6,6 +6,33 @@ const BASE_URL = "https://jsonplaceholder.typicode.com";
 // 200 registros fixos; limitamos para manter a lista enxuta no app.
 const LIST_LIMIT = 20;
 
+// O JSONPlaceholder devolve títulos em "lorem ipsum" sem sentido nenhum
+// (ex: "delectus aut autem"). Como isso é só para popular a listagem
+// inicial, trocamos pelo texto por tarefas reais do dia a dia, mantendo
+// id/completed/userId vindos da API.
+const DAILY_TASKS = [
+  "Comprar leite",
+  "Lavar o carro",
+  "Pagar a conta de luz",
+  "Levar o cachorro para passear",
+  "Arrumar a cama",
+  "Fazer compras no mercado",
+  "Estudar para a prova",
+  "Ligar para o dentista",
+  "Regar as plantas",
+  "Lavar a louça",
+  "Passar roupa",
+  "Organizar o armário",
+  "Trocar a lâmpada da sala",
+  "Levar o carro para revisão",
+  "Pagar a fatura do cartão",
+  "Fazer a lista de compras",
+  "Ir à academia",
+  "Ler um livro",
+  "Preparar o almoço",
+  "Tirar o lixo",
+];
+
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
     throw new Error(`Erro na API (HTTP ${res.status})`);
@@ -18,9 +45,10 @@ async function handle<T>(res: Response): Promise<T> {
  * Descrição, data/hora e notificação são extensões locais deste app, então
  * completamos cada item da API com os valores padrão desses campos.
  */
-function withLocalDefaults(todo: Todo): Todo {
+function withLocalDefaults(todo: Todo, index: number): Todo {
   return {
     ...todo,
+    title: DAILY_TASKS[index % DAILY_TASKS.length],
     description: todo.description ?? "",
     dueDate: todo.dueDate ?? null,
     notifyEnabled: todo.notifyEnabled ?? false,

@@ -13,6 +13,8 @@ Consome a API pública [JSONPlaceholder](https://jsonplaceholder.typicode.com/to
 - Notificação local no horário da tarefa, com ações rápidas direto na
   notificação: **Adiar 30 min** ou **Concluir tarefa**
 - Ações rápidas na listagem: concluir (checkbox) e excluir, sem abrir a tarefa
+- Animação ao concluir: o checkbox pisca em verde e a tarefa desliza até a
+  área de concluídas na lista
 - Aba de **Configurações**: ativar/desativar lembretes, antecedência padrão do
   lembrete, ordenar pendentes primeiro, limpar tarefas concluídas
 - Estados de carregando / erro (com "tentar novamente") / lista vazia
@@ -57,15 +59,31 @@ na sua máquina, rode `npx expo install` para as libs nativas (React Navigation,
 AsyncStorage, react-native-screens, react-native-safe-area-context) — ele ajusta
 as versões automaticamente para a versão do Expo SDK que você tiver.
 
-### Notificações — o que esperar em cada ambiente
+### O que esperar em cada ambiente
 
 - **Celular real com Expo Go:** funciona por completo — lembrete agendado,
-  banner de notificação e as duas ações rápidas (Adiar 30 min / Concluir).
-- **Web:** o navegador não tem um sistema de notificações locais agendadas
-  equivalente ao do SO; o restante do app (CRUD, busca, configurações) funciona
-  normalmente, mas o lembrete em si não dispara.
+  banner de notificação, as duas ações rápidas (Adiar 30 min / Concluir) e os
+  diálogos de confirmação (excluir tarefa, limpar concluídas).
+- **Web (`npx expo start --web` / `npm run web`):** duas limitações conhecidas,
+  ambas por causa de APIs nativas sem equivalente no navegador:
+  - **Notificações:** o navegador não tem um sistema de notificações locais
+    agendadas equivalente ao do SO, então o lembrete em si não dispara.
+  - **Confirmações (`Alert.alert`) não aparecem:** o `Alert` do React Native é
+    um no-op no `react-native-web` (não existe `window.confirm` por trás) —
+    então os botões que dependem de confirmação (**excluir uma tarefa** na
+    listagem e no detalhe, **limpar tarefas concluídas** nas Configurações)
+    não fazem nada visível ao serem clicados no navegador, porque o diálogo
+    que conteria o botão "Excluir"/"Confirmar" nunca é exibido. Não é um bug
+    do app — é uma limitação de compatibilidade do `Alert` no React Native
+    Web. O restante do CRUD (criar, editar, listar, buscar, concluir/reabrir
+    pelo checkbox) funciona normalmente no navegador.
 - **Emulador Android sem Google Play Services / simulador iOS:** permissão de
   notificação pode não estar disponível dependendo da imagem do emulador.
+
+> **Recomendação para a avaliação:** testar em um celular real via Expo Go
+> (ou em emulador Android/iOS) para ver a experiência completa, incluindo
+> notificações e as confirmações de exclusão. A versão web serve para uma
+> conferência rápida do CRUD e do layout, mas com essas duas ressalvas.
 
 ### Rodar os testes
 
@@ -97,6 +115,12 @@ npm test
 - **Limite de itens na listagem inicial:** busco os 20 primeiros itens da API
   (`?_limit=20`) para manter a lista enxuta na avaliação; ajustável em
   `src/services/api.ts`.
+- **Títulos das tarefas iniciais:** o JSONPlaceholder devolve títulos em
+  "lorem ipsum" sem sentido (ex: "delectus aut autem"). Como isso é só para
+  popular a listagem de exemplo, o `id`/`completed`/`userId` continuam vindo
+  da API, mas o título é substituído por uma lista local de tarefas do dia a
+  dia (comprar leite, lavar o carro, pagar conta de luz, etc.) em
+  `src/services/api.ts`, para a demonstração ficar mais realista.
 - **Descrição, data/hora e notificação são extensões locais da tarefa:** o
   JSONPlaceholder não conhece esses campos (só `title`, `completed`, `userId`).
   Eles vivem inteiramente no app (`AsyncStorage`); ao buscar/mesclar dados da
