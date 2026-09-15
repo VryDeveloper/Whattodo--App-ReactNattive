@@ -1,3 +1,4 @@
+
 # "Whattodo?" - Horizon Challenge — Teste Técnico Mobile Júnior
 
 App de CRUD de tarefas (To-Do) desenvolvido para o teste técnico da vaga
@@ -23,6 +24,8 @@ Consome a API pública [JSONPlaceholder](https://jsonplaceholder.typicode.com/to
   lembrete, ordenar pendentes primeiro, limpar tarefas concluídas
 - Estados de carregando / erro (com "tentar novamente") / lista vazia
 - Uso parcial offline na segunda abertura (cache local via AsyncStorage)
+
+<img width="400" height="800" alt="localhost_8081_ (2)" src="https://github.com/user-attachments/assets/3a51fd04-9fd0-4b16-9176-35f83986ff3f" />
 
 ## Stack escolhida
 
