@@ -9,6 +9,7 @@
     "ios": { "supportsTablet": true },
     "android": {
       "package": "com.horizon.todo",
+      "versionCode": 1,
       "adaptiveIcon": { "backgroundColor": "#111111" },
       "permissions": ["SCHEDULE_EXACT_ALARM", "POST_NOTIFICATIONS"]
     },
