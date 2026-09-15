@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Horizon To-Do",
+    "slug": "horizon-todo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true },
+    "android": {
+      "package": "com.horizon.todo",
+      "adaptiveIcon": { "backgroundColor": "#111111" }
+    },
+    "web": { "bundler": "metro" }
+  }
+}
