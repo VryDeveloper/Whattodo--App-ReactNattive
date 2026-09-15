@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -12,8 +13,10 @@ import {
   fetchTodos,
   updateTodoRemote,
 } from "../services/api";
+import { cancelTodoReminder, scheduleTodoReminder } from "../services/notifications";
 import { loadTodosFromStorage, saveTodosToStorage } from "../services/storage";
 import { LoadStatus, NewTodo, Todo } from "../types/todo";
+import { useSettings } from "./SettingsContext";
 
 interface TodoContextValue {
   todos: Todo[];
@@ -37,6 +40,7 @@ function generateLocalId(): number {
 }
 
 export function TodoProvider({ children }: { children: React.ReactNode }) {
+  const { settings } = useSettings();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [status, setStatus] = useState<LoadStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,6 +49,21 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     setTodos(next);
     await saveTodosToStorage(next);
   }, []);
+
+  // Agenda (ou cancela) o lembrete local da tarefa conforme as preferências
+  // atuais do usuário, devolvendo a tarefa já com o notificationId
+  // atualizado para ser persistida.
+  const syncReminder = useCallback(
+    async (todo: Todo): Promise<Todo> => {
+      if (!settings.notificationsEnabled) {
+        await cancelTodoReminder(todo.notificationId);
+        return { ...todo, notificationId: null };
+      }
+      const notificationId = await scheduleTodoReminder(todo, settings.reminderLeadMinutes);
+      return { ...todo, notificationId };
+    },
+    [settings.notificationsEnabled, settings.reminderLeadMinutes]
+  );
 
   const refresh = useCallback(async () => {
     setStatus("loading");
@@ -84,6 +103,26 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     refresh();
   }, [refresh]);
 
+  // Quando o usuário muda as preferências de notificação (chave geral ou
+  // antecedência padrão), reagenda/cancela os lembretes de todas as tarefas
+  // já carregadas para refletir a nova configuração. O ref evita disparar
+  // essa ressincronização logo no primeiro render.
+  const prevSettingsRef = useRef(settings);
+  useEffect(() => {
+    const prev = prevSettingsRef.current;
+    prevSettingsRef.current = settings;
+    const changed =
+      prev.notificationsEnabled !== settings.notificationsEnabled ||
+      prev.reminderLeadMinutes !== settings.reminderLeadMinutes;
+    if (!changed || todos.length === 0) return;
+
+    (async () => {
+      const withReminders = await Promise.all(todos.map(syncReminder));
+      await persist(withReminders);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só reagimos a mudanças de settings
+  }, [settings.notificationsEnabled, settings.reminderLeadMinutes]);
+
   const addTodo = useCallback(
     async (data: NewTodo) => {
       const optimistic: Todo = {
@@ -104,9 +143,10 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // mesmo se a chamada falhar (ex: offline), a tarefa é criada localmente.
       }
-      await persist([optimistic, ...todos]);
+      const withReminder = await syncReminder(optimistic);
+      await persist([withReminder, ...todos]);
     },
-    [todos, persist]
+    [todos, persist, syncReminder]
   );
 
   const editTodo = useCallback(
@@ -121,18 +161,21 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
         dueDate: data.dueDate,
         notifyEnabled: data.notifyEnabled,
       };
+      const withReminder = await syncReminder(updated);
       try {
-        await updateTodoRemote(updated);
+        await updateTodoRemote(withReminder);
       } catch {
         // segue com a atualização local mesmo se a API simulada falhar.
       }
-      await persist(todos.map((t) => (t.id === id ? updated : t)));
+      await persist(todos.map((t) => (t.id === id ? withReminder : t)));
     },
-    [todos, persist]
+    [todos, persist, syncReminder]
   );
 
   const removeTodo = useCallback(
     async (id: number) => {
+      const target = todos.find((t) => t.id === id);
+      if (target) await cancelTodoReminder(target.notificationId);
       try {
         await deleteTodoRemote(id);
       } catch {
@@ -147,18 +190,22 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     async (id: number) => {
       const target = todos.find((t) => t.id === id);
       if (!target) return;
-      const updated: Todo = { ...target, completed: !target.completed };
+      const toggled: Todo = { ...target, completed: !target.completed };
+      // Concluir cancela o lembrete; reabrir a tarefa reagenda, se aplicável.
+      const withReminder = await syncReminder(toggled);
       try {
-        await updateTodoRemote(updated);
+        await updateTodoRemote(withReminder);
       } catch {
         // segue com a atualização local mesmo se a API simulada falhar.
       }
-      await persist(todos.map((t) => (t.id === id ? updated : t)));
+      await persist(todos.map((t) => (t.id === id ? withReminder : t)));
     },
-    [todos, persist]
+    [todos, persist, syncReminder]
   );
 
   const clearCompleted = useCallback(async () => {
+    const completed = todos.filter((t) => t.completed);
+    await Promise.all(completed.map((t) => cancelTodoReminder(t.notificationId)));
     await persist(todos.filter((t) => !t.completed));
   }, [todos, persist]);
 
