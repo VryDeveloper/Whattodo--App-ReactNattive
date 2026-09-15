@@ -1,6 +1,9 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { Todo } from "../types/todo";
+import { computeReminderTriggerDate } from "../utils/reminderTime";
+
+export { computeReminderTriggerDate };
 
 export const REMINDER_CATEGORY_ID = "todo-reminder";
 export const SNOOZE_ACTION_ID = "SNOOZE_30";
@@ -54,15 +57,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   if (current.granted) return true;
   const requested = await Notifications.requestPermissionsAsync();
   return requested.granted;
-}
-
-/**
- * Calcula o horário de disparo do lembrete: `leadMinutes` antes de
- * `dueDate`. Usado tanto para agendar quanto para decidir se ainda vale a
- * pena agendar (não agendamos lembrete para um horário já passado).
- */
-export function computeReminderTriggerDate(dueDate: string, leadMinutes: number): Date {
-  return new Date(new Date(dueDate).getTime() - leadMinutes * 60_000);
 }
 
 /**
