@@ -109,9 +109,12 @@ npm test
   descrito na observação do enunciado.
 - **IDs de tarefas criadas localmente** são gerados com `Date.now()`, para
   nunca colidir com os IDs (1–200) devolvidos pela API real.
-- **Merge cache + API na listagem:** ao abrir o app, primeiro carrega o cache
-  local (permite uso parcial offline) e, em seguida, busca a API; tarefas
-  criadas localmente (que não existem na API) são preservadas no merge.
+- **Cache local é a fonte de verdade na listagem:** ao abrir o app, se já
+  existe cache salvo (uso anterior), ele é carregado diretamente e a API não
+  é consultada de novo — evita que a API (que sempre devolve a mesma lista
+  fixa) sobrescreva tarefas criadas/editadas localmente. A API só é buscada
+  na primeiríssima abertura, quando ainda não há nada salvo, para popular a
+  listagem de exemplo.
 - **Busca/filtro:** feito 100% em memória sobre a lista já carregada — não
   dispara nenhuma chamada à API a cada tecla digitada.
 - **Estados de UI:** carregamento, erro (sem conexão, com botão de "tentar
@@ -121,15 +124,16 @@ npm test
   com feedback visual de erro inline (função pura e testada em
   `src/utils/validation.ts`).
 - **Exclusão:** exige confirmação via `Alert` antes de remover a tarefa.
-- **Limite de itens na listagem inicial:** busco os 20 primeiros itens da API
-  (`?_limit=20`) para manter a lista enxuta na avaliação; ajustável em
+- **Limite de itens na listagem inicial:** busco os 6 primeiros itens da API
+  (`?_limit=6`) para manter a lista enxuta na avaliação; ajustável em
   `src/services/api.ts`.
-- **Títulos das tarefas iniciais:** o JSONPlaceholder devolve títulos em
-  "lorem ipsum" sem sentido (ex: "delectus aut autem"). Como isso é só para
-  popular a listagem de exemplo, o `id`/`completed`/`userId` continuam vindo
-  da API, mas o título é substituído por uma lista local de tarefas do dia a
-  dia (comprar leite, lavar o carro, pagar conta de luz, etc.) em
-  `src/services/api.ts`, para a demonstração ficar mais realista.
+- **Títulos e situação das tarefas iniciais:** o JSONPlaceholder devolve
+  títulos em "lorem ipsum" sem sentido (ex: "delectus aut autem") e um
+  `completed` aleatório. Como isso é só para popular a listagem de exemplo,
+  apenas `id`/`userId` continuam vindo da API — título e situação
+  (pendente/concluída) vêm de uma lista local fixa em `src/services/api.ts`
+  (4 tarefas pendentes e 2 já concluídas, com nomes reais do dia a dia), para
+  a demonstração ficar mais realista e previsível.
 - **Descrição, data/hora e notificação são extensões locais da tarefa:** o
   JSONPlaceholder não conhece esses campos (só `title`, `completed`, `userId`).
   Eles vivem inteiramente no app (`AsyncStorage`); ao buscar/mesclar dados da

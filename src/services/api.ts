@@ -2,35 +2,22 @@ import { NewTodo, Todo } from "../types/todo";
 
 const BASE_URL = "https://jsonplaceholder.typicode.com";
 
-// Quantidade de itens buscados na listagem inicial. O JSONPlaceholder tem
-// 200 registros fixos; limitamos para manter a lista enxuta no app.
-const LIST_LIMIT = 20;
+// Quantidade de itens buscados na listagem inicial. Mantemos a lista
+// enxuta (4 pendentes + 2 concluídas) para servir só como exemplo inicial.
+const LIST_LIMIT = 6;
 
 // O JSONPlaceholder devolve títulos em "lorem ipsum" sem sentido nenhum
-// (ex: "delectus aut autem"). Como isso é só para popular a listagem
-// inicial, trocamos pelo texto por tarefas reais do dia a dia, mantendo
-// id/completed/userId vindos da API.
-const DAILY_TASKS = [
-  "Comprar leite",
-  "Lavar o carro",
-  "Pagar a conta de luz",
-  "Levar o cachorro para passear",
-  "Arrumar a cama",
-  "Fazer compras no mercado",
-  "Estudar para a prova",
-  "Ligar para o dentista",
-  "Regar as plantas",
-  "Lavar a louça",
-  "Passar roupa",
-  "Organizar o armário",
-  "Trocar a lâmpada da sala",
-  "Levar o carro para revisão",
-  "Pagar a fatura do cartão",
-  "Fazer a lista de compras",
-  "Ir à academia",
-  "Ler um livro",
-  "Preparar o almoço",
-  "Tirar o lixo",
+// (ex: "delectus aut autem") e um `completed` aleatório. Como isso é só
+// para popular a listagem inicial, substituímos por tarefas reais do dia a
+// dia com uma situação (pendente/concluída) fixa e conhecida, mantendo
+// apenas id/userId vindos da API.
+const DAILY_TASKS: { title: string; completed: boolean }[] = [
+  { title: "Comprar leite", completed: false },
+  { title: "Levar o cachorro para passear", completed: false },
+  { title: "Pagar a conta de luz", completed: false },
+  { title: "Estudar para a prova", completed: false },
+  { title: "Lavar a louça", completed: true },
+  { title: "Regar as plantas", completed: true },
 ];
 
 async function handle<T>(res: Response): Promise<T> {
@@ -43,12 +30,16 @@ async function handle<T>(res: Response): Promise<T> {
 /**
  * O JSONPlaceholder só conhece `id`, `title`, `completed` e `userId`.
  * Descrição, data/hora e notificação são extensões locais deste app, então
- * completamos cada item da API com os valores padrão desses campos.
+ * completamos cada item da API com os valores padrão desses campos. Título
+ * e situação (concluída ou não) vêm da lista local `DAILY_TASKS`, para que
+ * a listagem inicial mostre sempre o mesmo cenário de exemplo.
  */
 function withLocalDefaults(todo: Todo, index: number): Todo {
+  const seed = DAILY_TASKS[index % DAILY_TASKS.length];
   return {
     ...todo,
-    title: DAILY_TASKS[index % DAILY_TASKS.length],
+    title: seed.title,
+    completed: seed.completed,
     description: todo.description ?? "",
     dueDate: todo.dueDate ?? null,
     notifyEnabled: todo.notifyEnabled ?? false,
