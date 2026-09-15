@@ -44,6 +44,8 @@ afinidade com o ecossistema JS/TS (React, Node) no meu dia a dia.
 - **Seleção de data/hora:** `@react-native-community/datetimepicker`
 - **Testes:** Jest (unitários sobre validação e cálculo de horário do lembrete)
 
+  <img width="400" height="800" alt="localhost_8081_ (1)" src="https://github.com/user-attachments/assets/cba884fb-ae19-4b57-9329-30bd68e29ab2" />
+
 ## Como rodar o projeto
 
 ```bash
