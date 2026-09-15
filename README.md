@@ -1,5 +1,5 @@
 
-# "Whattodo?" - Horizon Challenge — Teste Técnico Mobile Júnior
+# 🟡 "Whattodo?" - Horizon Challenge — Teste Técnico Mobile Júnior
 
 App de CRUD de tarefas (To-Do) desenvolvido para o teste técnico da vaga
 **Desenvolvedor(a) Mobile Júnior I** da Horizon Inovação e Tecnologia.
