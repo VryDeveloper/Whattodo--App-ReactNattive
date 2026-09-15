@@ -87,7 +87,7 @@ export function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.footer}>Horizon To-Do · v1.0.0</Text>
+      <Text style={styles.footer}>"Whattodo?" - Horizon Challenge · v1.0.0</Text>
     </ScrollView>
   );
 }
