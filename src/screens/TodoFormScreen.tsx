@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { DateTimeField } from "../components/DateTimeField";
 import { useTodos } from "../context/TodoContext";
 import { RootStackParamList } from "../navigation/types";
 import { validateTitle } from "../utils/validation";
@@ -20,25 +22,53 @@ export function TodoFormScreen({ route, navigation }: Props) {
   const existing = editingId ? getTodoById(editingId) : undefined;
 
   const [title, setTitle] = useState(existing?.title ?? "");
+  const [description, setDescription] = useState(existing?.description ?? "");
   const [completed, setCompleted] = useState(existing?.completed ?? false);
-  const [error, setError] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(
+    existing?.dueDate ? new Date(existing.dueDate) : null
+  );
+  const [notifyEnabled, setNotifyEnabled] = useState(existing?.notifyEnabled ?? false);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function handleSave() {
-    const validationError = validateTitle(title);
-    if (validationError) {
-      setError(validationError);
+  function handleDueDateChange(next: Date | null) {
+    setDueDate(next);
+    if (!next) {
+      // Sem data não há lembrete possível.
+      setNotifyEnabled(false);
+    }
+    if (next) setNotifyError(null);
+  }
+
+  function handleNotifyToggle(value: boolean) {
+    if (value && !dueDate) {
+      setNotifyError("Defina uma data e hora para ativar o lembrete.");
       return;
     }
-    setError(null);
+    setNotifyError(null);
+    setNotifyEnabled(value);
+  }
+
+  async function handleSave() {
+    const titleValidationError = validateTitle(title);
+    if (titleValidationError) {
+      setTitleError(titleValidationError);
+      return;
+    }
+    if (notifyEnabled && !dueDate) {
+      setNotifyError("Defina uma data e hora para ativar o lembrete.");
+      return;
+    }
+    setTitleError(null);
     setSaving(true);
     try {
       const data = {
         title,
         completed,
-        description: existing?.description ?? "",
-        dueDate: existing?.dueDate ?? null,
-        notifyEnabled: existing?.notifyEnabled ?? false,
+        description: description.trim(),
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        notifyEnabled,
       };
       if (editingId) {
         await editTodo(editingId, data);
@@ -52,21 +82,44 @@ export function TodoFormScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.label}>Título</Text>
       <TextInput
-        style={[styles.input, error ? styles.inputError : null]}
+        style={[styles.input, titleError ? styles.inputError : null]}
         value={title}
         onChangeText={(text) => {
           setTitle(text);
-          if (error) setError(null);
+          if (titleError) setTitleError(null);
         }}
         placeholder="Ex.: Comprar leite"
         maxLength={120}
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {titleError && <Text style={styles.errorText}>{titleError}</Text>}
 
-      <View style={styles.switchRow}>
+      <Text style={[styles.label, styles.sectionSpacing]}>Descrição (opcional)</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        value={description}
+        onChangeText={setDescription}
+        placeholder="Detalhes sobre a tarefa..."
+        maxLength={500}
+        multiline
+        numberOfLines={4}
+      />
+
+      <View style={styles.sectionSpacing}>
+        <DateTimeField label="Data e hora (opcional)" value={dueDate} onChange={handleDueDateChange} />
+      </View>
+
+      <View style={[styles.switchRow, styles.sectionSpacing]}>
+        <View style={styles.switchLabelBox}>
+          <Text style={styles.label}>Notificar na hora da tarefa</Text>
+          {notifyError && <Text style={styles.errorText}>{notifyError}</Text>}
+        </View>
+        <Switch value={notifyEnabled} onValueChange={handleNotifyToggle} />
+      </View>
+
+      <View style={[styles.switchRow, styles.sectionSpacing]}>
         <Text style={styles.label}>Concluída</Text>
         <Switch value={completed} onValueChange={setCompleted} />
       </View>
@@ -78,12 +131,14 @@ export function TodoFormScreen({ route, navigation }: Props) {
       >
         <Text style={styles.buttonText}>{saving ? "Salvando..." : "Salvar"}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
+  container: { flex: 1, backgroundColor: "#fff" },
+  content: { padding: 20, paddingBottom: 40 },
+  sectionSpacing: { marginTop: 24 },
   label: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 6 },
   input: {
     borderWidth: 1,
@@ -94,14 +149,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#111",
   },
+  textArea: { minHeight: 90, textAlignVertical: "top" },
   inputError: { borderColor: "#D32F2F" },
   errorText: { color: "#D32F2F", fontSize: 13, marginTop: 6 },
   switchRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 24,
   },
+  switchLabelBox: { flex: 1, paddingRight: 12 },
   button: {
     marginTop: 32,
     backgroundColor: "#F5C400",
