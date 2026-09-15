@@ -33,10 +33,17 @@ export function TodoFormScreen({ route, navigation }: Props) {
     setError(null);
     setSaving(true);
     try {
+      const data = {
+        title,
+        completed,
+        description: existing?.description ?? "",
+        dueDate: existing?.dueDate ?? null,
+        notifyEnabled: existing?.notifyEnabled ?? false,
+      };
       if (editingId) {
-        await editTodo(editingId, { title, completed });
+        await editTodo(editingId, data);
       } else {
-        await addTodo({ title, completed });
+        await addTodo(data);
       }
       navigation.goBack();
     } finally {

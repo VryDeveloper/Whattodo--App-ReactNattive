@@ -13,9 +13,25 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * O JSONPlaceholder só conhece `id`, `title`, `completed` e `userId`.
+ * Descrição, data/hora e notificação são extensões locais deste app, então
+ * completamos cada item da API com os valores padrão desses campos.
+ */
+function withLocalDefaults(todo: Todo): Todo {
+  return {
+    ...todo,
+    description: todo.description ?? "",
+    dueDate: todo.dueDate ?? null,
+    notifyEnabled: todo.notifyEnabled ?? false,
+    notificationId: todo.notificationId ?? null,
+  };
+}
+
 export async function fetchTodos(): Promise<Todo[]> {
   const res = await fetch(`${BASE_URL}/todos?_limit=${LIST_LIMIT}`);
-  return handle<Todo[]>(res);
+  const remote = await handle<Todo[]>(res);
+  return remote.map(withLocalDefaults);
 }
 
 /**
@@ -24,7 +40,9 @@ export async function fetchTodos(): Promise<Todo[]> {
  * no id retornado por aqui para nada além de log — o id "real" usado na
  * lista e no storage é gerado localmente (ver TodoContext).
  */
-export async function createTodoRemote(todo: NewTodo): Promise<Todo> {
+export async function createTodoRemote(
+  todo: Pick<NewTodo, "title" | "completed">
+): Promise<Todo> {
   const res = await fetch(`${BASE_URL}/todos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

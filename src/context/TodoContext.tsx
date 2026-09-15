@@ -23,6 +23,7 @@ interface TodoContextValue {
   addTodo: (data: NewTodo) => Promise<void>;
   editTodo: (id: number, data: NewTodo) => Promise<void>;
   removeTodo: (id: number) => Promise<void>;
+  toggleCompleted: (id: number) => Promise<void>;
   getTodoById: (id: number) => Todo | undefined;
 }
 
@@ -89,6 +90,10 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
         title: data.title.trim(),
         completed: data.completed,
         userId: 1,
+        description: data.description.trim(),
+        dueDate: data.dueDate,
+        notifyEnabled: data.notifyEnabled,
+        notificationId: null,
       };
       // A API simula o POST (retorna 201 mas não persiste de verdade).
       // Tratamos a resposta simulada como confirmação e seguimos com o
@@ -107,7 +112,14 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     async (id: number, data: NewTodo) => {
       const target = todos.find((t) => t.id === id);
       if (!target) return;
-      const updated: Todo = { ...target, title: data.title.trim(), completed: data.completed };
+      const updated: Todo = {
+        ...target,
+        title: data.title.trim(),
+        completed: data.completed,
+        description: data.description.trim(),
+        dueDate: data.dueDate,
+        notifyEnabled: data.notifyEnabled,
+      };
       try {
         await updateTodoRemote(updated);
       } catch {
@@ -130,14 +142,39 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     [todos, persist]
   );
 
+  const toggleCompleted = useCallback(
+    async (id: number) => {
+      const target = todos.find((t) => t.id === id);
+      if (!target) return;
+      const updated: Todo = { ...target, completed: !target.completed };
+      try {
+        await updateTodoRemote(updated);
+      } catch {
+        // segue com a atualização local mesmo se a API simulada falhar.
+      }
+      await persist(todos.map((t) => (t.id === id ? updated : t)));
+    },
+    [todos, persist]
+  );
+
   const getTodoById = useCallback(
     (id: number) => todos.find((t) => t.id === id),
     [todos]
   );
 
   const value = useMemo(
-    () => ({ todos, status, errorMessage, refresh, addTodo, editTodo, removeTodo, getTodoById }),
-    [todos, status, errorMessage, refresh, addTodo, editTodo, removeTodo, getTodoById]
+    () => ({
+      todos,
+      status,
+      errorMessage,
+      refresh,
+      addTodo,
+      editTodo,
+      removeTodo,
+      toggleCompleted,
+      getTodoById,
+    }),
+    [todos, status, errorMessage, refresh, addTodo, editTodo, removeTodo, toggleCompleted, getTodoById]
   );
 
   return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>;
