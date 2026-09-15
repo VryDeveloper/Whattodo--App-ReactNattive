@@ -75,30 +75,26 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     setStatus("loading");
     setErrorMessage(null);
 
-    // 1) Sempre exibe o que já existe em cache local primeiro (permite uso
-    //    parcial offline na segunda abertura do app).
+    // Se já existe cache local, ele é a fonte de verdade: o app já foi
+    // "semeado" com os dados iniciais da API alguma vez e o usuário pode ter
+    // criado/editado tarefas desde então. Buscar a API mock de novo aqui
+    // sobrescreveria essas edições com a mesma lista fixa que ela sempre
+    // devolve, então simplesmente recarregamos o que está salvo.
     const cached = await loadTodosFromStorage();
     if (cached) {
       setTodos(cached);
+      setStatus("success");
+      return;
     }
 
-    // 2) Tenta buscar dados "frescos" da API pública.
+    // Sem cache (primeira abertura do app): busca a lista inicial da API
+    // pública para popular o app.
     try {
       const remote = await fetchTodos();
-      if (cached) {
-        // Mescla: mantém tarefas criadas/editadas localmente que não vieram
-        // da API (ids gerados localmente) e atualiza as que vieram dela.
-        const remoteIds = new Set(remote.map((t) => t.id));
-        const onlyLocal = cached.filter((t) => !remoteIds.has(t.id));
-        const merged = [...remote, ...onlyLocal];
-        await persist(merged);
-      } else {
-        await persist(remote);
-      }
+      await persist(remote);
       setStatus("success");
     } catch (err) {
-      // Sem conexão / erro na API: se já havia cache, seguimos com ele.
-      setStatus(cached && cached.length > 0 ? "success" : "error");
+      setStatus("error");
       setErrorMessage(
         err instanceof Error ? err.message : "Falha ao carregar tarefas."
       );
